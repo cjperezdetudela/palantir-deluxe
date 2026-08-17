@@ -12,6 +12,11 @@ document.addEventListener('DOMContentLoaded', () => {
   loadCatalog(currentCategory, 1);
   initModals();
   initPlaybackDelegation();
+
+  const storedAdKey = localStorage.getItem('palantir_alldebrid_key');
+  if (storedAdKey) {
+    saveApiKey(storedAdKey, true);
+  }
 });
 
 function getWatchlist() {
@@ -841,6 +846,7 @@ function initSettingsModal() {
 
   btnLogoutAd?.addEventListener('click', async () => {
     if (confirm('¿Deseas desconectar tu cuenta de AllDebrid?')) {
+      localStorage.removeItem('palantir_alldebrid_key');
       await fetch('/api/settings/alldebrid', { method: 'DELETE' });
       document.getElementById('alldebridStatusCard').style.display = 'none';
       document.getElementById('inputApiKey').value = '';
@@ -935,6 +941,9 @@ async function startAlldebridPinFlow() {
         const checkData = await checkResp.json();
         if (checkData.status === 'success' && checkData.activated) {
           clearInterval(pinCheckInterval);
+          if (checkData.apikey) {
+            localStorage.setItem('palantir_alldebrid_key', checkData.apikey);
+          }
           pinStatusEl.textContent = '✅ ¡Cuenta de AllDebrid vinculada correctamente!';
           pinStatusEl.style.color = '#10b981';
           loadAlldebridUserInfo();
@@ -954,7 +963,7 @@ async function startAlldebridPinFlow() {
   }
 }
 
-async function saveApiKey(apiKey) {
+async function saveApiKey(apiKey, silent = false) {
   try {
     const resp = await fetch('/api/settings/alldebrid', {
       method: 'POST',
@@ -963,16 +972,19 @@ async function saveApiKey(apiKey) {
     });
     
     if (resp.ok) {
+      localStorage.setItem('palantir_alldebrid_key', apiKey);
       const userOk = await loadAlldebridUserInfo();
-      if (userOk) {
-        alert('✅ API Key de AllDebrid validada y guardada correctamente');
-      } else {
-        alert('⚠️ La API Key ingresada no es válida en AllDebrid.');
+      if (!silent) {
+        if (userOk) {
+          alert('✅ API Key de AllDebrid validada y guardada correctamente');
+        } else {
+          alert('⚠️ La API Key ingresada no es válida en AllDebrid.');
+        }
       }
     } else {
-      alert('Error guardando la API Key');
+      if (!silent) alert('Error guardando la API Key');
     }
   } catch (err) {
-    alert(`Error: ${err.message}`);
+    if (!silent) alert(`Error: ${err.message}`);
   }
 }

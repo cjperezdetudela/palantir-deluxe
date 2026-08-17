@@ -608,8 +608,8 @@ class AllDebridCheckPinRequest(BaseModel):
 @app.get("/api/settings/alldebrid")
 def get_alldebrid_settings():
     st = kodi_shim.load_addon_settings()
-    enabled = str(st.get("Alldebrid_enabled", "false")).lower() in ["true", "1", "yes"]
-    apikey = st.get("Alldebrid_apikey", "")
+    apikey = st.get("Alldebrid_apikey", "") or os.environ.get("ALLDEBRID_APIKEY", "")
+    enabled = str(st.get("Alldebrid_enabled", "false")).lower() in ["true", "1", "yes"] or bool(os.environ.get("ALLDEBRID_APIKEY"))
     masked = (apikey[:4] + "..." + apikey[-4:]) if len(apikey) >= 8 else ("***" if apikey else "")
     return {
         "enabled": enabled,
@@ -673,7 +673,7 @@ def check_alldebrid_pin(req_data: AllDebridCheckPinRequest):
 @app.get("/api/alldebrid/user")
 def get_alldebrid_user_info():
     st = kodi_shim.load_addon_settings()
-    apikey = st.get("Alldebrid_apikey", "")
+    apikey = st.get("Alldebrid_apikey", "") or os.environ.get("ALLDEBRID_APIKEY", "")
     if not apikey:
         raise HTTPException(status_code=400, detail="No hay API Key guardada de AllDebrid")
     
@@ -726,8 +726,8 @@ def resolve_stream(link: str):
             resolved_url = resolver.resolve_url()
             
         st = kodi_shim.load_addon_settings()
-        enabled = str(st.get("Alldebrid_enabled", "false")).lower() in ["true", "1", "yes"]
-        apikey = st.get("Alldebrid_apikey", "")
+        apikey = st.get("Alldebrid_apikey", "") or os.environ.get("ALLDEBRID_APIKEY", "")
+        enabled = str(st.get("Alldebrid_enabled", "false")).lower() in ["true", "1", "yes"] or bool(apikey)
         
         if enabled and apikey and resolved_url:
             unlocked = unlock_with_alldebrid(resolved_url, apikey)
