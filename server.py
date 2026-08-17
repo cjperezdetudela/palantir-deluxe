@@ -38,7 +38,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-DB_PATH = os.path.abspath(r"kodi_data\profile\addon_data\script.module\settings.xml")
+DB_PATH = os.path.abspath(os.path.join("kodi_data", "profile", "addon_data", "script.module", "settings.xml"))
 
 def get_db_connection():
     if not os.path.exists(DB_PATH):

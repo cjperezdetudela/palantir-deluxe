@@ -8,7 +8,7 @@ import kodi_shim
 kodi_shim.install_kodi_shims()
 
 # 2. Palantir Addon path setup
-addon_path = os.path.abspath(r"extracted_plugin.video.palantir3\plugin.video.palantir3")
+addon_path = os.path.abspath(os.path.join("extracted_plugin.video.palantir3", "plugin.video.palantir3"))
 if addon_path not in sys.path:
     sys.path.insert(0, addon_path)
 
