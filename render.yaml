@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: palantir-deluxe
+    env: docker
+    plan: free
+    region: oregon
+    healthCheckPath: /
+    envVars:
+      - key: PORT
+        value: 10000

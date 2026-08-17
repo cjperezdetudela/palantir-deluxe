@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.log
+scratch/
+test_*.py
+check_*.py
+inspect_*.py
+search_*.py
+dump_*.py
+find_*.py
+print_*.py
+download_*.py
+.vscode/
+.idea/
+kodi_data/profile/addon_data/script.module/settings.xml
+kodi_data/profile/addon_data/plugin.video.palantir3/cache.db
