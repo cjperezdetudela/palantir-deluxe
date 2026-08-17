@@ -18,12 +18,14 @@ import context
 import libs.ioI1I1ii1 as resolver_mod
 
 import zipfile
-db_path = os.path.join(kodi_shim.DB_DIR, "settings.xml")
-zip_path = os.path.join(kodi_shim.DB_DIR, "settings.zip")
+db_dir = getattr(kodi_shim, "DB_DIR", os.path.abspath(os.path.join("kodi_data", "profile", "addon_data", "script.module")))
+db_path = os.path.join(db_dir, "settings.xml")
+zip_path = os.path.join(db_dir, "settings.zip")
 if not os.path.exists(db_path) and os.path.exists(zip_path):
     print("[SERVER STARTUP] Descomprimiendo base de datos settings.zip...")
+    os.makedirs(db_dir, exist_ok=True)
     with zipfile.ZipFile(zip_path, 'r') as zf:
-        zf.extractall(kodi_shim.DB_DIR)
+        zf.extractall(db_dir)
     print("[SERVER STARTUP] Base de datos descompactada correctamente.")
 
 app = FastAPI(title="Palantir Deluxe API", version="1.0.0")

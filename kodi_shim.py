@@ -195,9 +195,7 @@ class XBMCGUI:
     NOTIFICATION_WARNING = 'warning'
     NOTIFICATION_ERROR = 'error'
 
-# --- XBMCADDON ---
-import json
-
+DB_DIR = os.path.abspath(os.path.join("kodi_data", "profile", "addon_data", "script.module"))
 SETTINGS_FILE = os.path.abspath(os.path.join("kodi_data", "profile", "addon_data", "plugin.video.palantir3", "settings.json"))
 
 def load_addon_settings():
