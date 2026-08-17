@@ -875,13 +875,15 @@ async function checkAlldebridStatus() {
   }
 }
 
-async function loadAlldebridUserInfo() {
+async function loadAlldebridUserInfo(customKey = null) {
   const card = document.getElementById('alldebridStatusCard');
   const usernameEl = document.getElementById('adUsername');
   const statusTextEl = document.getElementById('adStatusText');
 
   try {
-    const resp = await fetch('/api/alldebrid/user');
+    const keyToUse = customKey || localStorage.getItem('palantir_alldebrid_key') || '';
+    const url = keyToUse ? `/api/alldebrid/user?apikey=${encodeURIComponent(keyToUse)}` : '/api/alldebrid/user';
+    const resp = await fetch(url);
     if (resp.ok) {
       const data = await resp.json();
       usernameEl.textContent = `👤 ${data.username || 'Usuario AllDebrid'}`;

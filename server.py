@@ -598,7 +598,7 @@ from pydantic import BaseModel
 import json
 
 class AllDebridSaveRequest(BaseModel):
-    enabled: bool
+    enabled: bool = True
     apikey: str = ""
 
 class AllDebridCheckPinRequest(BaseModel):
@@ -671,9 +671,10 @@ def check_alldebrid_pin(req_data: AllDebridCheckPinRequest):
         raise HTTPException(status_code=500, detail=f"Error comprobando PIN: {str(e)}")
 
 @app.get("/api/alldebrid/user")
-def get_alldebrid_user_info():
-    st = kodi_shim.load_addon_settings()
-    apikey = st.get("Alldebrid_apikey", "") or os.environ.get("ALLDEBRID_APIKEY", "")
+def get_alldebrid_user_info(apikey: str = Query(None)):
+    if not apikey:
+        st = kodi_shim.load_addon_settings()
+        apikey = st.get("Alldebrid_apikey", "") or os.environ.get("ALLDEBRID_APIKEY", "")
     if not apikey:
         raise HTTPException(status_code=400, detail="No hay API Key guardada de AllDebrid")
     
