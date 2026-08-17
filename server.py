@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 # Initialize Kodi Shim environment
-addon_dir = os.path.abspath(r"extracted_plugin.video.palantir3\plugin.video.palantir3")
+addon_dir = os.path.abspath(os.path.join("extracted_plugin.video.palantir3", "plugin.video.palantir3"))
 if addon_dir not in sys.path:
     sys.path.insert(0, addon_dir)
 

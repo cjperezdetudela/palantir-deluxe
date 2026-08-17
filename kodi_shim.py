@@ -198,7 +198,7 @@ class XBMCGUI:
 # --- XBMCADDON ---
 import json
 
-SETTINGS_FILE = os.path.abspath(r"kodi_data\profile\addon_data\plugin.video.palantir3\settings.json")
+SETTINGS_FILE = os.path.abspath(os.path.join("kodi_data", "profile", "addon_data", "plugin.video.palantir3", "settings.json"))
 
 def load_addon_settings():
     if os.path.exists(SETTINGS_FILE):
@@ -221,7 +221,7 @@ class Addon:
     def getAddonInfo(self, info):
         info_lower = info.lower()
         if info_lower in ['path', 'profile']:
-            return os.path.abspath(r"extracted_plugin.video.palantir3\plugin.video.palantir3")
+            return os.path.abspath(os.path.join("extracted_plugin.video.palantir3", "plugin.video.palantir3"))
         if info_lower == 'name':
             return "Palantir 3"
         if info_lower == 'version':
