@@ -5,11 +5,11 @@ let currentGenre = '';
 let hlsPlayer = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+  initAuth();
   initNav();
   initSearch();
   initGenreFilters();
   updateWatchlistBadge();
-  loadCatalog(currentCategory, 1);
   initModals();
   initPlaybackDelegation();
 
@@ -18,6 +18,92 @@ document.addEventListener('DOMContentLoaded', () => {
     saveApiKey(storedAdKey, true);
   }
 });
+
+async function initAuth() {
+  const token = localStorage.getItem('palantir_auth_token');
+  const loginOverlay = document.getElementById('loginOverlay');
+  const logoutBtn = document.getElementById('logoutBtn');
+
+  if (token) {
+    try {
+      const resp = await fetch(`/api/auth/check?token=${encodeURIComponent(token)}`);
+      const data = await resp.json();
+      if (data.authenticated) {
+        if (loginOverlay) loginOverlay.classList.remove('active');
+        if (logoutBtn) logoutBtn.style.display = 'inline-block';
+        loadCatalog(currentCategory, 1);
+        return;
+      }
+    } catch (e) {
+      console.error('Error checking auth:', e);
+    }
+  }
+
+  if (loginOverlay) loginOverlay.classList.add('active');
+  if (logoutBtn) logoutBtn.style.display = 'none';
+  setupLoginForm();
+}
+
+function setupLoginForm() {
+  const loginForm = document.getElementById('loginForm');
+  const loginError = document.getElementById('loginError');
+  const togglePassBtn = document.getElementById('togglePassBtn');
+  const loginPassword = document.getElementById('loginPassword');
+  const logoutBtn = document.getElementById('logoutBtn');
+
+  togglePassBtn?.addEventListener('click', () => {
+    if (loginPassword.type === 'password') {
+      loginPassword.type = 'text';
+      togglePassBtn.textContent = '🙈';
+    } else {
+      loginPassword.type = 'password';
+      togglePassBtn.textContent = '👁️';
+    }
+  });
+
+  logoutBtn?.addEventListener('click', async () => {
+    if (confirm('¿Deseas cerrar sesión en Palantir Deluxe?')) {
+      localStorage.removeItem('palantir_auth_token');
+      await fetch('/api/auth/logout', { method: 'POST' });
+      location.reload();
+    }
+  });
+
+  loginForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
+
+    if (loginError) loginError.style.display = 'none';
+
+    try {
+      const resp = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await resp.json();
+
+      if (resp.ok && data.status === 'success') {
+        localStorage.setItem('palantir_auth_token', data.token);
+        document.getElementById('loginOverlay').classList.remove('active');
+        if (logoutBtn) logoutBtn.style.display = 'inline-block';
+        loadCatalog(currentCategory, 1);
+      } else {
+        if (loginError) {
+          loginError.textContent = data.detail || 'Usuario o contraseña incorrectos';
+          loginError.style.display = 'block';
+        }
+      }
+    } catch (err) {
+      if (loginError) {
+        loginError.textContent = `Error conectando con el servidor: ${err.message}`;
+        loginError.style.display = 'block';
+      }
+    }
+  });
+}
 
 function getWatchlist() {
   try {

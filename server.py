@@ -594,8 +594,21 @@ def get_novedades(
         "items": items
     }
 
+import hashlib
+import secrets
+
+APP_USERNAME = os.environ.get("APP_USERNAME", "yinfu1984")
+APP_PASSWORD = os.environ.get("APP_PASSWORD", "Antonioo1838*")
+AUTH_SECRET = "palantir_deluxe_secret_key_2026"
+
+def generate_user_token(username: str) -> str:
+    return hashlib.sha256(f"{username}:{AUTH_SECRET}".encode('utf-8')).hexdigest()
+
 from pydantic import BaseModel
-import json
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
 
 class AllDebridSaveRequest(BaseModel):
     enabled: bool = True
@@ -604,6 +617,33 @@ class AllDebridSaveRequest(BaseModel):
 class AllDebridCheckPinRequest(BaseModel):
     pin: str
     check: str
+
+@app.post("/api/auth/login")
+def login(req: LoginRequest):
+    user_clean = req.username.strip()
+    pass_clean = req.password.strip()
+    
+    if user_clean == APP_USERNAME and pass_clean == APP_PASSWORD:
+        token = generate_user_token(user_clean)
+        return {
+            "status": "success",
+            "message": "Sesión iniciada correctamente",
+            "token": token,
+            "username": user_clean
+        }
+    else:
+        raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
+
+@app.get("/api/auth/check")
+def check_auth(token: str = Query(None)):
+    expected_token = generate_user_token(APP_USERNAME)
+    if token and token == expected_token:
+        return {"authenticated": True, "username": APP_USERNAME}
+    return {"authenticated": False}
+
+@app.post("/api/auth/logout")
+def logout():
+    return {"status": "success", "message": "Sesión cerrada"}
 
 @app.get("/api/settings/alldebrid")
 def get_alldebrid_settings():

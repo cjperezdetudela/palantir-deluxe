@@ -54,6 +54,9 @@
       <button class="settings-nav-btn" id="settingsBtn" style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; padding: 0.5rem 1rem; cursor: pointer;">
         <span style="color: #818cf8; font-weight: 700;">⚡ AllDebrid</span>
       </button>
+      <button class="settings-nav-btn" id="logoutBtn" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 0.5rem 0.9rem; cursor: pointer; display: none;" title="Cerrar Sesión">
+        <span style="color: #ef4444; font-weight: 700;">🚪 Salir</span>
+      </button>
     </nav>
 
     <!-- Search Bar -->
@@ -184,7 +187,47 @@
     </div>
   </div>
 
+  <!-- Login Screen Modal Overlay -->
+  <div class="login-overlay active" id="loginOverlay">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="logo-icon" style="width: 54px; height: 54px; margin: 0 auto 0.8rem auto; border-radius: 12px;">
+          <svg viewBox="0 0 24 24" style="width: 30px; height: 30px;">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+        </div>
+        <h1 class="login-title">PALANTIR <span style="color: var(--accent-gold); font-size: 0.85em;">DELUXE</span></h1>
+        <p class="login-subtitle">Ingresa tus credenciales para acceder al catálogo</p>
+      </div>
+
+      <form id="loginForm" class="login-form">
+        <div id="loginError" class="login-error-msg" style="display: none;"></div>
+        
+        <div class="input-group">
+          <label for="loginUsername">Usuario</label>
+          <div class="input-wrap">
+            <span class="input-icon">👤</span>
+            <input type="text" id="loginUsername" placeholder="Tu usuario..." required autocomplete="username">
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="loginPassword">Contraseña</label>
+          <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input type="password" id="loginPassword" placeholder="Tu contraseña..." required autocomplete="current-password">
+            <button type="button" id="togglePassBtn" class="toggle-pass-btn">👁️</button>
+          </div>
+        </div>
+
+        <button type="submit" id="loginSubmitBtn" class="login-submit-btn">
+          <span>Iniciar Sesión 🚀</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
   <!-- App JavaScript -->
-  <script src="/static/js/app.js?v=1.4"></script>
+  <script src="/static/js/app.js?v=1.5"></script>
 </body>
 </html>
