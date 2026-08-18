@@ -620,9 +620,29 @@ def get_alldebrid_settings():
 @app.post("/api/settings/alldebrid")
 def save_alldebrid_settings(req: AllDebridSaveRequest):
     st = kodi_shim.load_addon_settings()
-    st["Alldebrid_enabled"] = req.enabled
-    if req.apikey:
-        st["Alldebrid_apikey"] = req.apikey.strip()
+    key_to_save = (req.apikey or "").strip()
+    
+    if key_to_save:
+        val_url = f"https://api.alldebrid.com/v4/user?agent=Palantir&apikey={urllib.parse.quote(key_to_save)}"
+        try:
+            val_req = urllib.request.Request(val_url, headers={'User-Agent': 'Palantir/3.0'})
+            with urllib.request.urlopen(val_req, timeout=10) as resp:
+                data = json.loads(resp.read().decode('utf-8'))
+                if data.get("status") != "success":
+                    err_msg = data.get("error", {}).get("message", "API Key no válida en AllDebrid")
+                    raise HTTPException(status_code=400, detail=f"API Key no válida: {err_msg}")
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Error al validar API Key con AllDebrid: {str(e)}")
+
+        st["Alldebrid_apikey"] = key_to_save
+        st["Alldebrid_enabled"] = req.enabled
+    else:
+        st["Alldebrid_enabled"] = req.enabled
+        if not req.enabled:
+            st["Alldebrid_apikey"] = ""
+
     kodi_shim.save_addon_settings(st)
     return {"status": "success", "message": "Configuración de AllDebrid guardada correctamente"}
 
@@ -650,7 +670,9 @@ def start_alldebrid_pin():
 
 @app.post("/api/alldebrid/pin/check")
 def check_alldebrid_pin(req_data: AllDebridCheckPinRequest):
-    url = f"https://api.alldebrid.com/v4/pin/check?agent=Palantir&check={req_data.check}&pin={req_data.pin}"
+    check_enc = urllib.parse.quote(req_data.check)
+    pin_enc = urllib.parse.quote(req_data.pin)
+    url = f"https://api.alldebrid.com/v4/pin/check?agent=Palantir&check={check_enc}&pin={pin_enc}"
     try:
         req = urllib.request.Request(url, headers={'User-Agent': 'Palantir/3.0'})
         with urllib.request.urlopen(req, timeout=10) as resp:
@@ -672,13 +694,13 @@ def check_alldebrid_pin(req_data: AllDebridCheckPinRequest):
 
 @app.get("/api/alldebrid/user")
 def get_alldebrid_user_info(apikey: str = Query(None)):
-    if not apikey:
+    if not apikey or apikey.lower() in ["null", "undefined"]:
         st = kodi_shim.load_addon_settings()
         apikey = st.get("Alldebrid_apikey", "") or os.environ.get("ALLDEBRID_APIKEY", "")
     if not apikey:
         raise HTTPException(status_code=400, detail="No hay API Key guardada de AllDebrid")
     
-    url = f"https://api.alldebrid.com/v4/user?agent=Palantir&apikey={apikey}"
+    url = f"https://api.alldebrid.com/v4/user?agent=Palantir&apikey={urllib.parse.quote(apikey)}"
     try:
         req = urllib.request.Request(url, headers={'User-Agent': 'Palantir/3.0'})
         with urllib.request.urlopen(req, timeout=10) as resp:
@@ -694,6 +716,8 @@ def get_alldebrid_user_info(apikey: str = Query(None)):
                 }
             else:
                 raise HTTPException(status_code=400, detail=data.get("error", {}).get("message", "API Key no válida"))
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error consultando usuario en AllDebrid: {str(e)}")
 
@@ -730,17 +754,19 @@ def resolve_stream(link: str):
         apikey = st.get("Alldebrid_apikey", "") or os.environ.get("ALLDEBRID_APIKEY", "")
         enabled = str(st.get("Alldebrid_enabled", "false")).lower() in ["true", "1", "yes"] or bool(apikey)
         
+        debrid_unlocked_flag = False
         if enabled and apikey and resolved_url:
             unlocked = unlock_with_alldebrid(resolved_url, apikey)
             if unlocked:
                 print(f"[ALLDEBRID] Unlocked stream successfully: {unlocked}")
                 resolved_url = unlocked
+                debrid_unlocked_flag = True
             
         return {
             "link": link,
             "stream_url": resolved_url,
             "label": getattr(resolver, "enlace_label", "Palantir Stream"),
-            "debrid_unlocked": bool(enabled and apikey)
+            "debrid_unlocked": debrid_unlocked_flag
         }
     except Exception as e:
         print(f"[RESOLVE ERROR] {e}")
