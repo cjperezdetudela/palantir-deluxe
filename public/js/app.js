@@ -673,34 +673,58 @@ async function playLink(linkStr, title) {
   }
 }
 
+function openVlcDeepLink(streamUrl) {
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if (isIOS) {
+    const iosVlcUrl = `vlc-x-callback://x-callback-url/stream?url=${encodeURIComponent(streamUrl)}`;
+    window.location.href = iosVlcUrl;
+  } else {
+    window.location.href = `vlc://${streamUrl}`;
+  }
+}
+
 async function playVlcLink(linkStr, title, btn) {
   if (btn) btn.textContent = '⏳ ...';
 
   try {
-    const resp = await fetch('/api/play/vlc', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ link: linkStr })
-    });
-
+    const resp = await fetch(`/api/resolve?link=${encodeURIComponent(linkStr)}`);
+    if (!resp.ok) throw new Error('Falló al descodificar el enlace');
+    
     const data = await resp.json();
-    if (resp.ok && data.status === 'success') {
-      const streamUrl = data.stream_url || '';
-      const isUnlocked = data.debrid_unlocked;
-      const isHoster = streamUrl.includes('1fichier.com') || streamUrl.includes('uptobox.com') || streamUrl.includes('rapidgator.net') || streamUrl.includes('mega.nz');
+    const streamUrl = data.stream_url;
+    const isUnlocked = data.debrid_unlocked;
+    const isHoster = streamUrl.includes('1fichier.com') || streamUrl.includes('uptobox.com') || streamUrl.includes('rapidgator.net') || streamUrl.includes('mega.nz');
 
-      if (isHoster && !isUnlocked) {
-        alert('⚡ REQUERIDO: Este servidor (1fichier) requiere conectar tu cuenta de AllDebrid para reproducirse en VLC.\n\nPor favor vincula tu cuenta pulsando en ⚡ AllDebrid.');
-        document.getElementById('settingsModal').classList.add('active');
-        checkAlldebridStatus();
-      } else {
-        console.log(`VLC iniciado para: ${title}`);
-      }
+    if (isHoster && !isUnlocked) {
+      alert('⚡ REQUERIDO: Este servidor (1fichier) requiere conectar tu cuenta de AllDebrid para reproducirse en VLC.\n\nPor favor vincula tu cuenta pulsando en ⚡ AllDebrid.');
+      document.getElementById('settingsModal').classList.add('active');
+      checkAlldebridStatus();
+      return;
+    }
+
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      openVlcDeepLink(streamUrl);
     } else {
-      alert(`⚠️ ${data.detail || 'No se pudo iniciar VLC.'}`);
+      try {
+        const vlcResp = await fetch('/api/play/vlc', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ stream_url: streamUrl })
+        });
+        const vlcData = await vlcResp.json();
+        if (vlcResp.ok && vlcData.status === 'success') {
+          console.log(`VLC iniciado en servidor para: ${title}`);
+        } else {
+          openVlcDeepLink(streamUrl);
+        }
+      } catch (err) {
+        openVlcDeepLink(streamUrl);
+      }
     }
   } catch (err) {
-    alert(`Error conectando con VLC: ${err.message}`);
+    alert(`No se pudo resolver el enlace para VLC: ${err.message}`);
   } finally {
     if (btn) btn.textContent = '🟧 VLC';
   }
@@ -711,20 +735,25 @@ async function playCurrentInVlc() {
     alert('No hay un vídeo reproduciéndose en este momento.');
     return;
   }
-  try {
-    const resp = await fetch('/api/play/vlc', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ stream_url: currentStreamUrl })
-    });
-    const data = await resp.json();
-    if (resp.ok && data.status === 'success') {
-      console.log('VLC iniciado para stream actual');
-    } else {
-      window.location.href = `vlc://${currentStreamUrl}`;
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if (isMobile) {
+    openVlcDeepLink(currentStreamUrl);
+  } else {
+    try {
+      const resp = await fetch('/api/play/vlc', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stream_url: currentStreamUrl })
+      });
+      const data = await resp.json();
+      if (resp.ok && data.status === 'success') {
+        console.log('VLC iniciado para stream actual');
+      } else {
+        openVlcDeepLink(currentStreamUrl);
+      }
+    } catch (err) {
+      openVlcDeepLink(currentStreamUrl);
     }
-  } catch (err) {
-    window.location.href = `vlc://${currentStreamUrl}`;
   }
 }
 
